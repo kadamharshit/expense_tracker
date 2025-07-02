@@ -25,7 +25,7 @@ A simple yet powerful *Flutter app* to track your daily expenses manually or thr
 ![Home Page](assets/homepage.jpg)
 
 ### Add Manual Expense
-![Add Manual Expense](assets/addmanualexpense.jpg)
+![Add Manual Expense](assets/addmanualreceipt.jpg)
 
 ### Expense Tracker
 ![Expense Tracker](assets/expensetracker.jpg)
