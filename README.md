@@ -22,11 +22,16 @@ A simple yet powerful *Flutter app* to track your daily expenses manually or thr
 
 ## 📱 Screenshots
 
-| Login | Add Manual Expense | OCR Receipt |
-|-------|--------------------|-------------|
-| (Add screenshot here) | (Add screenshot here) | (Add screenshot here) |
+![Expense Tracker Screenshot]
+**Home Page**
+(assets/homepage.jpg)
 
----
+**Add Manual Expense**
+(assets/addmanualexpense.jpg)
+
+**Expense Tracker**
+(assets/expensetracker.jpg)
+
 
 ## 📦 Dependencies
 
