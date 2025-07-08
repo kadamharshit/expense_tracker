@@ -15,6 +15,7 @@ class _AddManualExpenseState extends State<AddManualExpense> {
   String? _selectedDate;
   final _shopController = TextEditingController();
   String _selectedCategory = 'Grocery';
+  String _selectedPaymentMode = 'Cash';
 
   List<Map<String, String>> itemInputs = [];
   double total = 0.0;
@@ -27,6 +28,8 @@ class _AddManualExpenseState extends State<AddManualExpense> {
     'Bills',
     'Other'
   ];
+
+  final List<String> _paymentModes = ['Cash', 'Online'];
 
   @override
   void initState() {
@@ -55,18 +58,30 @@ class _AddManualExpenseState extends State<AddManualExpense> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
+      final String date =
+          _selectedDate ?? DateFormat('yyyy-MM-dd').format(DateTime.now());
+
       final expense = {
-        'date': _selectedDate ?? DateFormat('yyyy-MM-dd').format(DateTime.now()),
+        'date': date,
         'shop': _shopController.text,
         'category': _selectedCategory,
         'items': itemInputs.map((item) => item.values.join(' | ')).join('\n'),
         'total': total,
       };
 
+      // Save expense
       await DatabaseHelper.instance.insertExpense(expense);
 
+      // Deduct from budget based on payment mode
+      final deduction = {
+        'date': date,
+        'amount': -total,
+        'mode': _selectedPaymentMode,
+      };
+      await DatabaseHelper.instance.insertBudget(deduction);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Expense Saved!")),
+        const SnackBar(content: Text("Expense Saved & Budget Updated!")),
       );
 
       Navigator.pop(context);
@@ -110,20 +125,23 @@ class _AddManualExpenseState extends State<AddManualExpense> {
             decoration: const InputDecoration(labelText: 'Destination'),
             onSaved: (val) => item['destination'] = val ?? '',
             initialValue: item['destination'],
-            validator: (val) => val == null || val.isEmpty ? 'Enter destination' : null,
+            validator: (val) =>
+                val == null || val.isEmpty ? 'Enter destination' : null,
           ),
         ] else ...[
           TextFormField(
             decoration: const InputDecoration(labelText: 'Item Name'),
             onSaved: (val) => item['name'] = val ?? '',
             initialValue: item['name'],
-            validator: (val) => val == null || val.isEmpty ? 'Enter item name' : null,
+            validator: (val) =>
+                val == null || val.isEmpty ? 'Enter item name' : null,
           ),
           TextFormField(
             decoration: const InputDecoration(labelText: 'Quantity'),
             onSaved: (val) => item['qty'] = val ?? '',
             initialValue: item['qty'],
-            validator: (val) => val == null || val.isEmpty ? 'Enter quantity' : null,
+            validator: (val) =>
+                val == null || val.isEmpty ? 'Enter quantity' : null,
           ),
         ],
         TextFormField(
@@ -135,7 +153,8 @@ class _AddManualExpenseState extends State<AddManualExpense> {
           },
           onSaved: (val) => item['amount'] = val ?? '0',
           initialValue: item['amount'],
-          validator: (val) => val == null || val.isEmpty ? 'Enter amount' : null,
+          validator: (val) =>
+              val == null || val.isEmpty ? 'Enter amount' : null,
         ),
         const Divider(thickness: 1),
       ],
@@ -159,8 +178,10 @@ class _AddManualExpenseState extends State<AddManualExpense> {
               ),
               TextFormField(
                 controller: _shopController,
-                decoration: const InputDecoration(labelText: 'Shop Name / Type'),
-                validator: (value) => value!.isEmpty ? 'Enter shop name' : null,
+                decoration:
+                    const InputDecoration(labelText: 'Shop Name / Type'),
+                validator: (value) =>
+                    value!.isEmpty ? 'Enter shop name' : null,
               ),
               DropdownButtonFormField(
                 value: _selectedCategory,
@@ -176,10 +197,25 @@ class _AddManualExpenseState extends State<AddManualExpense> {
                 },
                 decoration: const InputDecoration(labelText: 'Category'),
               ),
+              DropdownButtonFormField(
+                value: _selectedPaymentMode,
+                items: _paymentModes
+                    .map((mode) =>
+                        DropdownMenuItem(value: mode, child: Text(mode)))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedPaymentMode = value!;
+                  });
+                },
+                decoration: const InputDecoration(labelText: 'Paid By'),
+              ),
               const SizedBox(height: 16),
-              const Text("Items", style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text("Items",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              ...List.generate(itemInputs.length, (index) => _buildItemFields(index)),
+              ...List.generate(
+                  itemInputs.length, (index) => _buildItemFields(index)),
               Text("Total: ₹${total.toStringAsFixed(2)}"),
               const SizedBox(height: 10),
               ElevatedButton.icon(
