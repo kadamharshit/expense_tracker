@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -31,16 +33,30 @@ class DatabaseHelper {
         total REAL
       )
     ''');
+    await db.execute('''
+      CREATE TABLE budget(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT,
+        amount REAL,
+        mode TEXT)
+     ''');
   }
 
   Future<int> insertExpense(Map<String, dynamic> data) async {
     final db = await instance.database;
     return await db.insert('expenses', data);
   }
-
+Future<List<Map<String, dynamic>>> getBudget() async {
+  final db = await instance.database;
+  return await db.query('budget', orderBy: 'date DESC');
+}
   Future<List<Map<String, dynamic>>> getExpenses() async {
     final db = await instance.database;
     return await db.query('expenses', orderBy: 'date DESC');
+  }
+  Future<int> insertBudget(Map<String, dynamic>data) async {
+    final db = await instance.database;
+    return await db.insert('budget', data);
   }
   Future<int> updateExpense(int id, Map<String, dynamic> updatedData) async {
   final db = await instance.database;

@@ -1,6 +1,9 @@
 import 'package:expense_tracker/add_expense.dart';
+import 'package:expense_tracker/add_cash.dart';
+import 'package:expense_tracker/drawer/budget_tracker.dart';
 import 'package:expense_tracker/drawer/expense_tracker.dart';
 import 'package:expense_tracker/drawer/profiles.dart';
+import 'package:expense_tracker/drawer/how_to_use.dart';
 import 'package:expense_tracker/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -19,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final FlutterSecureStorage storage = FlutterSecureStorage();
   double _totalExpense = 0.0;
+  double _totalBudget = 0.0;
   String _username = '';
   String _useremail = '';
 
@@ -27,12 +31,25 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadUserInfo();
     _loadTotalExpense();
+    _loadTotalBudget();
   }
   Future<void> _loadTotalExpense() async{
     final expenses = await DatabaseHelper.instance.getExpenses();
     final total = expenses.fold(0.0,(sum,item)=>sum + (item['total']as double));
     setState(() {
       _totalExpense = total;
+    });
+  }
+  Future <void> _loadTotalBudget() async{
+    final budget = await DatabaseHelper.instance.getBudget();
+    double total = budget.fold(0.0,(sum, item){
+      final amount = item['amount'];
+      if (amount is int) return sum + amount.toDouble();
+      if(amount is double) return sum + amount;
+      return sum;
+    });
+    setState(() {
+      _totalBudget = total;
     });
   }
   String currentMonthYear() {
@@ -64,7 +81,15 @@ class _HomeScreenState extends State<HomeScreen> {
               subtitle: Text("₹ ${_totalExpense.toStringAsFixed(2)}"),
               leading: Icon(Icons.currency_rupee),
               ),
-            )
+            ),
+            Card(
+              margin: EdgeInsets.all(16),
+              child: ListTile(
+                title: Text("Total Budget ${currentMonthYear()}"),
+                subtitle: Text("₹ ${_totalBudget.toStringAsFixed(2)}"),
+                leading: Icon(Icons.money),
+              ),
+            ),
           ],
         ),
       ),
@@ -104,6 +129,19 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context)=>ExpenseTracker()));
               },
+            ),ListTile(
+              leading: const Icon(Icons.money),
+              title: const Text("Manage Budget"),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context)=> BudgetTracker()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.question_mark),
+              title: const Text("How To Use"),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context)=> HowToUse()));
+              },
             ),
             ListTile(
               leading: const Icon(Icons.logout),
@@ -132,14 +170,45 @@ class _HomeScreenState extends State<HomeScreen> {
       
       ),
     ),
-    floatingActionButton: FloatingActionButton(
-      onPressed: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context)=> AddExpense()));
-      },
-      child: Icon(Icons.add),
-       tooltip: "Add Expense",
+floatingActionButton: FloatingActionButton(
+  onPressed: () {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      
-  );
-  }
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.add),
+            title: const Text('Add Expense'),
+            onTap: () async {
+              Navigator.pop(context);
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AddExpense()),
+              );
+              _loadTotalExpense(); // Refresh total expense
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.account_balance_wallet),
+            title: const Text('Add Budget'),
+            onTap: () async {
+              Navigator.pop(context);
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AddCash()),
+              );
+              _loadTotalBudget(); // Refresh total budget ✅
+            },
+          ),
+        ],
+      ),
+    );
+  },
+),    
+);
+}
 }
